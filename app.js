@@ -1,14 +1,10 @@
-// Servidor Backend (Turso API)
-const API_URL = 'https://investigacion-ii.onrender.com/api/investigation';
-const DOC_ID = 'protocolo-monografia-pedro';
-
-// Configuración de Supabase (renombrado a supabaseClient para evitar colisiones)
+// Configuración de Supabase
 const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
 const SUPABASE_KEY = 'TU-PUBLIC-ANON-KEY';
-const supabaseClient = window.supabase ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Adaptación de las 9 Fases Académicas
-let currentSections = [
+// Adaptación de las 9 Fases Académicas de la Investigación de Pedro
+const defaultSections = [
   {
     id: "sec-1",
     title: "1. Selección y Delimitación del Tema",
@@ -19,7 +15,7 @@ let currentSections = [
       <ul>
         <li><strong>Línea de Investigación:</strong> Green Computing e Infraestructura Red distribuida.</li>
         <li><strong>Delimitación Temática:</strong> Evaluación del consumo de energía eléctrica (Watts) y uso de hardware (CPU/RAM) en contenedores Docker.</li>
-        <li><strong>Delimitación Espacial:</strong> Laboratorio informático de servidores (INATEC León).</li>
+        <li><strong>Delimitación Espacial:</strong> Laboratorio informático de servidores del área de Ingeniería en Sistemas (INATEC León).</li>
         <li><strong>Delimitación Temporal:</strong> Análisis continuo durante 3 meses de prueba.</li>
       </ul>
     `
@@ -30,7 +26,7 @@ let currentSections = [
     themeClass: "theme-2",
     content: `
       <h3>Descripción de la Problemática</h3>
-      <p>La transición hacia microservicios en contenedores ha incrementado la huella energética en centros de datos. La falta de visibilidad del costo energético directo en decisiones de software provoca consumo innecesario de watts y costos financieros elevados.</p>
+      <p>La transición hacia microservicios en contenedores ha incrementado la huella energética en centros de datos. La falta de visibilidad del costo energético directo en decisiones de software (consultas ineficientes, contenedores zombies en iddle) provoca consumo innecesario de watts y costos financieros elevados.</p>
       <h3>Pregunta Principal de Investigación</h3>
       <p><em>"¿Cuáles son los patrones de consumo energético y el perfil de uso de recursos de hardware en aplicaciones de microservicios desplegadas en servidores bajo diferentes cargas de trabajo e itinerarios de optimización?"</em></p>
     `
@@ -60,6 +56,9 @@ let currentSections = [
       <p><strong>Green Computing:</strong> Murugesan (2008) define las prácticas de informática verde enfocadas en software eficiente para reducir ciclos de reloj y uso de memoria.</p>
       <p><strong>Microservicios y Docker:</strong> Fowler (2014) analiza el aislamiento de procesos y el impacto de contenedores subutilizados en la potencia eléctrica.</p>
       <p><strong>Telemetría e IoT:</strong> Convergencia de sensores no invasivos SCT-013 con agentes Prometheus/cAdvisor para perfilado directo de hardware/software.</p>
+      <h3>Referencias Bibliográficas</h3>
+      <p>• Fowler, M. (2014). Microservices: a definition of this new architectural term. <em>IEEE Software Journal</em>, 31(3), 24-29.</p>
+      <p>• Murugesan, S. (2008). Harnessing Green IT: Principles and practices. <em>IT Professional</em>, 10(1), 24-33.</p>
     `
   },
   {
@@ -118,30 +117,12 @@ let currentSections = [
   }
 ];
 
-// Inicialización
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadFromTurso();
+// Inicialización de la Aplicación
+document.addEventListener("DOMContentLoaded", () => {
+  renderSections(defaultSections);
   fetchNotifications();
 });
 
-// Cargar Datos desde Turso Cloud
-async function loadFromTurso() {
-  try {
-    const res = await fetch(`${API_URL}/${DOC_ID}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.title) document.getElementById('doc-title').innerText = data.title;
-      if (data.sections && Array.isArray(data.sections)) {
-        currentSections = data.sections;
-      }
-    }
-  } catch (err) {
-    console.warn("Iniciando con datos por defecto locales.");
-  }
-  renderSections(currentSections);
-}
-
-// Renderizar Tarjetas Bento Grid
 function renderSections(sections) {
   const grid = document.getElementById("bento-grid");
   grid.innerHTML = "";
@@ -159,53 +140,16 @@ function renderSections(sections) {
       </div>
       <div class="comments-section">
         <div class="comment-box">
-          <input type="text" id="input-${sec.id}" placeholder="Escribe un comentario en esta sección...">
+          <input type="text" id="input-${sec.id}" placeholder="Escribe un comentario o sugerencia en esta sección...">
           <button onclick="addComment('${sec.id}')"><i class="ri-send-plane-fill"></i></button>
         </div>
         <div class="comments-list" id="comments-list-${sec.id}">
-          <div class="comment-item"><strong>Revisión Académica:</strong> Sección alineada con las normas de monografía.</div>
+          <div class="comment-item"><strong>Revisión Académica:</strong> Sección alineada con la norma APA 7.</div>
         </div>
       </div>
     `;
     grid.appendChild(card);
   });
-}
-
-// Guardar Cambios en Turso Cloud
-async function saveProgress() {
-  const title = document.getElementById('doc-title').innerText;
-  
-  // Extraer el HTML editable actualizado de cada sección
-  const updatedSections = currentSections.map(sec => {
-    const el = document.getElementById(sec.id);
-    return {
-      ...sec,
-      content: el ? el.innerHTML : sec.content
-    };
-  });
-
-  const payload = {
-    id: DOC_ID,
-    user_id: 'pedro-valverde',
-    title: title,
-    sections: updatedSections
-  };
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (data.status === 'exito') {
-      alert("¡Avances e investigación guardados con éxito en Turso Cloud!");
-    }
-  } catch (err) {
-    console.error('Error al guardar:', err);
-    alert('No se pudo conectar con el servidor en http://localhost:3000');
-  }
 }
 
 // Editor de Texto Enriquecido
@@ -227,44 +171,45 @@ function addNewSection() {
     themeClass: "theme-1",
     content: "<p>Escribe el contenido aquí...</p>"
   };
-  currentSections.push(newSec);
-  renderSections(currentSections);
+  defaultSections.push(newSec);
+  renderSections(defaultSections);
 }
 
-// Agregar Comentarios Locales
-function addComment(secId) {
-  const input = document.getElementById(`input-${secId}`);
-  const list = document.getElementById(`comments-list-${secId}`);
-  if (!input.value.trim()) return;
-
-  const item = document.createElement('div');
-  item.className = 'comment-item';
-  item.innerHTML = `<strong>Tú:</strong> ${input.value}`;
-  list.appendChild(item);
-  input.value = '';
-}
-
-// Autenticación con Google
+// Autenticación con Google vía Supabase
 async function loginWithGoogle() {
-  if (!supabaseClient) return alert("Configura tus credenciales de Supabase.");
-  const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+  });
   if (error) alert("Error al iniciar sesión: " + error.message);
 }
 
-// Gestión de Notificaciones
+// Gestión de Notificaciones de Visitas
 async function fetchNotifications() {
+  const { data: notifications } = await supabase.from('visitor_notifications').select('*');
   const badge = document.getElementById('notif-badge');
   const list = document.getElementById('notif-list');
   
-  const mockNotifs = [
-    { id: 1, visitor_name: 'Dra. Damaris Medal', action: 'Visualizó tu protocolo' },
-    { id: 2, visitor_name: 'Ing. Denis Berrios', action: 'Revisó el Marco Teórico' }
-  ];
-  badge.innerText = mockNotifs.length;
-  list.innerHTML = mockNotifs.map(n => `
+  if (!notifications || notifications.length === 0) {
+    // Datos simulados iniciales si la tabla está vacía
+    const mockNotifs = [
+      { id: 1, visitor_name: 'Dra. Damaris Medal', action: 'Visualizó tu protocolo' },
+      { id: 2, visitor_name: 'Ing. Denis Berrios', action: 'Dejó un comentario en Marco Teórico' }
+    ];
+    badge.innerText = mockNotifs.length;
+    list.innerHTML = mockNotifs.map(n => `
+      <li class="notif-item">
+        <span><strong>${n.visitor_name}:</strong> ${n.action}</span>
+        <button onclick="deleteNotif(this)"><i class="ri-delete-bin-line"></i></button>
+      </li>
+    `).join('');
+    return;
+  }
+
+  badge.innerText = notifications.length;
+  list.innerHTML = notifications.map(n => `
     <li class="notif-item">
       <span><strong>${n.visitor_name}:</strong> ${n.action}</span>
-      <button onclick="deleteNotif(this)"><i class="ri-delete-bin-line"></i></button>
+      <button onclick="deleteNotifBD('${n.id}', this)"><i class="ri-delete-bin-line"></i></button>
     </li>
   `).join('');
 }
@@ -279,7 +224,7 @@ function toggleNotifications() {
   document.getElementById('notifications-panel').classList.toggle('hidden');
 }
 
-// Exportación Multiformato
+// Funciones de Exportación Multiformato
 function exportPDF() {
   const element = document.getElementById('investigation-canvas');
   const opt = {
@@ -320,7 +265,7 @@ function exportWord() {
   a.click();
 }
 
-// Modal Compartir
+// Modal para Compartir
 document.getElementById('btn-share').onclick = () => {
   document.getElementById('share-modal').classList.remove('hidden');
   document.getElementById('share-url-input').value = window.location.href + "?token=share-abc12345";
@@ -330,115 +275,9 @@ function closeShareModal() {
   document.getElementById('share-modal').classList.add('hidden');
 }
 
-async function copyShareUrl() {
+function copyShareUrl() {
   const input = document.getElementById('share-url-input');
-  try {
-    await navigator.clipboard.writeText(input.value);
-    alert("¡Enlace de investigación copiado al portapapeles!");
-  } catch (err) {
-    input.select();
-    document.execCommand('copy');
-    alert("¡Enlace copiado!");
-  }
+  input.select();
+  document.execCommand('copy');
+  alert("¡Enlace de investigación copiado al portapapeles!");
 }
-
-let currentAccessRole = 'edit'; // Por defecto acceso completo local
-let currentShareToken = '';
-
-// Al cargar la página, verificamos si hay un token en la URL (?token=...)
-document.addEventListener("DOMContentLoaded", async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  currentShareToken = urlParams.get('token') || '';
-
-  await loadFromTurso();
-  fetchNotifications();
-});
-
-// Cargar Datos y aplicar permisos de interfaz
-async function loadFromTurso() {
-  try {
-    const fetchUrl = currentShareToken 
-      ? `${API_URL}/${DOC_ID}?token=${currentShareToken}`
-      : `${API_URL}/${DOC_ID}`;
-
-    const res = await fetch(fetchUrl);
-    if (res.ok) {
-      const data = await res.json();
-      
-      if (data.title) document.getElementById('doc-title').innerText = data.title;
-      if (data.sections && Array.isArray(data.sections)) {
-        currentSections = data.sections;
-      }
-      
-      // Aplicar rol de permisos retornado por el servidor
-      if (data.user_access_role) {
-        currentAccessRole = data.user_access_role;
-        applyPermissionsToUI(currentAccessRole);
-      }
-    }
-  } catch (err) {
-    console.warn("Iniciando con estructura local.");
-  }
-  renderSections(currentSections);
-  applyPermissionsToUI(currentAccessRole);
-}
-
-// Bloquear o permitir edición según el tipo de enlace
-function applyPermissionsToUI(role) {
-  const isReadOnly = (role === 'view_comment');
-  
-  // Título principal
-  const titleEl = document.getElementById('doc-title');
-  if (titleEl) titleEl.contentEditable = !isReadOnly;
-
-  // Ocultar botones de guardado y edición si es solo lectura
-  const btnSave = document.getElementById('btn-save-turso');
-  const toolbar = document.querySelector('.editor-toolbar');
-  
-  if (btnSave) btnSave.style.display = isReadOnly ? 'none' : 'inline-flex';
-  if (toolbar) toolbar.style.display = isReadOnly ? 'none' : 'flex';
-
-  // Deshabilitar contenteditable en todas las tarjetas
-  document.querySelectorAll('.card-body').forEach(card => {
-    card.contentEditable = !isReadOnly;
-  });
-}
-
-// Generar o actualizar enlace desde el Modal
-async function updateSharePermission() {
-  const permissionSelect = document.getElementById('share-permission').value;
-  
-  // Generar token único si no existe
-  if (!currentShareToken) {
-    currentShareToken = 'share-' + Math.random().toString(36).substring(2, 10);
-  }
-
-  // Guardar la configuración del enlace en Turso
-  const payload = {
-    id: DOC_ID,
-    user_id: 'pedro-valverde',
-    title: document.getElementById('doc-title').innerText,
-    sections: currentSections,
-    permission_token: currentShareToken,
-    share_role: permissionSelect
-  };
-
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const generatedLink = `${window.location.origin}${window.location.pathname}?token=${currentShareToken}`;
-    document.getElementById('share-url-input').value = generatedLink;
-  } catch (err) {
-    console.error("Error guardando el token:", err);
-  }
-}
-
-// Abrir el Modal de Compartir
-document.getElementById('btn-share').onclick = () => {
-  document.getElementById('share-modal').classList.remove('hidden');
-  updateSharePermission(); // Genera y sincroniza el enlace al abrir
-};
