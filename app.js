@@ -1,5 +1,5 @@
 // Servidor Backend (Turso API)
-const API_URL = 'http://localhost:3000/api/investigation';
+const API_URL = 'https://investigacion-ii.onrender.com/api/investigation';
 const DOC_ID = 'protocolo-monografia-pedro';
 
 // Configuración de Supabase (renombrado a supabaseClient para evitar colisiones)

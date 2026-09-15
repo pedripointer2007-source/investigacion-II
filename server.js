@@ -5,7 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*' // O el enlace exacto de Vercel cuando lo obtengas
+}));
 app.use(express.json());
 
 const db = createClient({
